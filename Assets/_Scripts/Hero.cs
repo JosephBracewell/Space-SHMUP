@@ -10,30 +10,67 @@ public class Hero : MonoBehaviour {
 	public float speed = 30;
 	public float rollMult = -45;
 	public float pitchMult = 30;
+	public float gameRestartDelay = 2f;
 
 	[Header("Set Dynamically")]
-	public float shieldLevel = 1;
+	[SerializeField]
+	public float _shieldLevel = 1;
+	private GameObject lastTriggerGo = null;
 
 	void Awake() {
 		if (S == null) {
-		S = this; // Set the Singleton // a
-	} else {
-		Debug.LogError("Hero.Awake() - Attempted to assign second Hero.S!");
+			S = this; // Set the Singleton // a
+		} else {
+			Debug.LogError("Hero.Awake() - Attempted to assign second Hero.S!");
+		}
+	} 
+
+	void Update () {
+		// Pull in information from the Input class
+		float xAxis = Input.GetAxis("Horizontal"); // b
+		float yAxis = Input.GetAxis("Vertical"); // b
+
+		// Change transform.position based on the axes
+		Vector3 pos = transform.position;
+		pos.x += xAxis * speed * Time.deltaTime;
+		pos.y += yAxis * speed * Time.deltaTime;
+		transform.position = pos;
+	
+		// Rotate the ship to make it feel more dynamic // c
+		transform.rotation = Quaternion.Euler(yAxis*pitchMult,xAxis*rollMult,0);
 	}
-} 
 
-void Update () {
-	// Pull in information from the Input class
-	float xAxis = Input.GetAxis("Horizontal"); // b
-	float yAxis = Input.GetAxis("Vertical"); // b
+	void OnTriggerEnter(Collider other) {
+		Transform rootT = other.gameObject.transform.root;
+		GameObject go = rootT.gameObject;
+		print("Triggered: "+go.name);
+	
+		if (go == lastTriggerGo) { // c
+			return;
+		}
+		lastTriggerGo = go; // d
 
-	// Change transform.position based on the axes
-	Vector3 pos = transform.position;
-	pos.x += xAxis * speed * Time.deltaTime;
-	pos.y += yAxis * speed * Time.deltaTime;
-	transform.position = pos;
+		if (go.tag == "Enemy") { // If the shield was triggered by an enemy
+			shieldLevel--; // Decrease the level of the shield by 1
+			Destroy(go); // ... and Destroy the enemy // e
+		} else {
+			print( "Triggered by non-Enemy: "+go.name); // f
+		}
+	}
 
-	// Rotate the ship to make it feel more dynamic // c
-	transform.rotation = Quaternion.Euler(yAxis*pitchMult,xAxis*rollMult,0);
-}
+	public float shieldLevel {
+		get {
+			return( _shieldLevel ); // a
+		}
+		set {
+			_shieldLevel = Mathf.Min( value,4 ); // b
+
+			// If the shield is going to be set to less than zero
+			if (value < 0) { // c
+				Destroy(this.gameObject);
+				// Tell Main.S to restart the game after a delay
+				Main.S.DelayedRestart( gameRestartDelay );
+			}
+		}
+	}
 }
