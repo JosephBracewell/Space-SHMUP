@@ -13,6 +13,7 @@ public class Hero : MonoBehaviour {
 	public float gameRestartDelay = 2f;
 	public GameObject projectilePrefab;
 	public float projectileSpeed = 40;
+	public Weapon[] weapons;
 
 	[Header("Set Dynamically")]
 	[SerializeField]
@@ -30,7 +31,7 @@ public class Hero : MonoBehaviour {
 		} else {
 			Debug.LogError("Hero.Awake() - Attempted to assign second Hero.S!");
 		}
-		//fireDelegate += TempFire;
+		fireDelegate += TempFire;
 	} 
 
 	void Update () {
